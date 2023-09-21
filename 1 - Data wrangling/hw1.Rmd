@@ -1,0 +1,211 @@
+---
+title: "Exploratory Data Analysis & Visualization (EDAV) - HW1"
+author: "Antonios Kagias"
+date: "2022-10-21"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+## ΜΕΡΟΣ Α
+
+```{r include=FALSE}
+library(tidyverse)
+```
+
+```{r echo=TRUE}
+data <- tribble(
+  ~happy, ~uptempo, ~blues, ~jazz, ~gospel,
+  "yes", "yes", 10, 5, 20,
+  "no", "no", NA, 12, 15,
+  "yes", "no", 7, 6, 4,
+  "no", "yes", 3, NA, NA
+)
+data
+```
+
+#### Ερώτημα (α)
+**Μετασχηματισμός δεδομένων.**
+```{r echo=TRUE}
+data_tidy1 <- data %>%
+  pivot_longer(c(blues, jazz, gospel), names_to = "genre", values_to = "count") %>%
+  arrange(genre)
+data_tidy1
+```
+
+#### Ερώτημα (β)
+**Μετασχηματισμός δεδομένων.**
+```{r echo=TRUE}
+data_tidy2 <- data %>%
+  pivot_longer(c(blues, jazz, gospel), names_to = "genre", values_to = "count", values_drop_na = TRUE) %>%
+  arrange(genre)
+data_tidy2
+```
+
+#### Ερώτημα (γ)
+**Μετασχηματισμός δεδομένων.**
+``````{r echo=TRUE}
+# FALSE FALSE
+temp1 <- data_tidy2 %>%
+  filter(genre != "jazz" & happy == "no") %>%
+  select(count) %>%
+  sum(na.rm = TRUE)
+# FALSE TRUE
+temp2 <- data_tidy2 %>%
+  filter(genre != "jazz" & happy == "yes") %>%
+  select(count) %>%
+  sum(na.rm = TRUE)
+# TRUE FALSE
+temp3 <- data_tidy2 %>%
+  filter(genre == "jazz" & happy == "no") %>%
+  select(count) %>%
+  sum(na.rm = TRUE)
+# TRUE TRUE
+temp4 <- data_tidy2 %>%
+  filter(genre == "jazz" & happy == "yes") %>%
+  select(count) %>%
+  sum(na.rm = TRUE)
+
+data_tidy3 <- tribble(
+  ~jazz, ~happy, ~total,
+  "FALSE", "FALSE", temp1,
+  "FALSE", "TRUE", temp2,
+  "TRUE", "FALSE", temp3,
+  "TRUE", "TRUE", temp4
+)
+data_tidy3
+```
+
+#### Ερώτημα (δ)
+**Διατυπώστε την κατάλληλη εντολή για να πάρετε το συνολικό πλήθος των λυπημένων τραγουδιών jazz από το data_tidy2. Κάντε το ίδιο για το data_tidy3.**
+```{r echo=TRUE}
+data_tidy2 %>%
+  filter(genre == "jazz" & happy == "no") %>%
+  select(count) %>%
+  sum(na.rm = TRUE)
+
+data_tidy3 %>%
+  filter(jazz == TRUE & happy == FALSE) %>%
+  select(total)
+```
+
+
+## ΜΕΡΟΣ Β
+
+
+```{r include=FALSE}
+who <- tidyr::who
+
+dict_url <- "https://extranet.who.int/tme/generateCSV.asp?ds=dictionary"
+if (!file.exists("dict.csv")) download.file(dict_url, "dict.csv")
+dict <- read_csv('dict.csv')
+
+labels <- data.frame(name = colnames(who))
+
+explanations <- semi_join(dict, labels, by=c("variable_name" = "name"))
+```
+
+#### Ερώτημα (1)
+**Μετατρέψτε τον πίνακα ώστε να έχει το ακόλουθο σχήμα: who(country, iso2, iso3, year, notification, cases), όπου οι τιμές της στήλης notification είναι οι new_sp_m014, new_sp_m1524, κλπ. Πρακτικά, όλες οι στήλες που το όνομά τους ξεκινά από new. Προσέξτε ώστε να αγνοήσετε τις τιμές NA.**
+```{r echo=TRUE}
+ntfc <- select(filter(explanations, dataset == "Notification"), variable_name)
+
+who_new1 <- who %>% 
+  pivot_longer(c(ntfc$variable_name), names_to = "notification", values_to = "cases", values_drop_na = TRUE)
+who_new1
+```
+
+#### Ερώτημα (2)
+**Αντικαταστήστε όλες τις εμφανίσεις του string "newrel" στη στήλη notification με το string "new_rel"**
+```{r echo=TRUE}
+who_new2 <- who_new1 %>% 
+  mutate(notification = str_replace(notification, "newrel", "new_rel"))
+who_new2
+```
+
+#### Ερώτημα (3)
+**"Σπάστε" τα περιεχόμενα της στήλης notification στις στήλες new, type, sex, age.**
+
+Πρώτα θα "σπάσουμε" σε new, type και sex_age...
+```{r echo=TRUE}
+who_new3 <- who_new2 %>% 
+  separate(notification, into = c("new", "type", "sex_age"), sep = "_")
+who_new3
+```
+
+...και στη συνέχεια θα χωρίσουμε και το sex_age:
+```{r echo=TRUE}
+who_new4 <- who_new3 %>% 
+  separate(sex_age, into = c("sex", "age"), 1)
+who_new4
+```
+
+#### Ερώτημα (4)
+**"Πετάξτε" τις στήλες new, iso2, iso3.**
+```{r echo=TRUE}
+who_new5 <- who_new4 %>% 
+  select(!new) %>%
+  select(!iso2) %>%
+  select(!iso3)
+who_new5
+```
+
+#### Ερώτημα (5)
+**Υπολογίστε για κάθε χώρα το συνολικό αριθμό TB cases.**
+```{r echo=TRUE}
+who_new6 <- who_new5 %>% 
+  select(country, cases) %>%
+  group_by(country) %>%
+  summarise(count = sum(cases))
+who_new6
+```
+
+#### Ερώτημα (6)
+**Βρείτε για κάθε χρονιά τη χώρα με το μεγαλύτερο αριθμό smear positive pulmonary TB cases (sp).**
+```{r echo=TRUE}
+who_new7 <- who_new5 %>%
+  filter(type == "sp") %>%
+  group_by(year) %>%
+  summarise(cases = max(cases))
+who_new7
+```
+
+#### Ερώτημα (7)
+**Μόνο για την Ελλάδα, δώστε ένα πινακάκι με μόνο 3 στήλες: year, f, και m, όπου οι τιμές για τις στήλες m και f είναι το σύνολο των TB cases για γυναίκες και άνδρες αντίστοιχα. Ο πίνακας πρέπει να είναι ταξινομημένος σε φθίνουσα κατάταξη ως προς f+m, δηλαδή το συνολικό πλήθος των TB cases**
+
+Θα δημιουργήσουμε 2 βοηθητικούς πίνακες. Ο ένας θα περιέχει τα cases για τις γυναίκες ανά χρονιά και ο άλλος τα αντίστοιχα για τους άνδρες.
+
+Ο πρώτος πίνακας "greek_f" για γυναίκες:
+```{r echo=TRUE}
+greek_f <- who_new5 %>% 
+  filter(country == "Greece") %>%
+  filter(sex == "f") %>%
+  select(year, cases) %>%
+  group_by(year) %>%
+  mutate(f = sum(cases)) %>%
+  select(!cases) %>%
+  unique()
+greek_f
+```
+
+Ο δεύτερος πίνακας "greek_m για άνδρες:
+```{r echo=TRUE}
+greek_m <- who_new5 %>% 
+  filter(country == "Greece") %>%
+  filter(sex == "m") %>%
+  select(year, cases) %>%
+  group_by(year) %>%
+  mutate(m = sum(cases)) %>%
+  select(!cases) %>%
+  unique()
+greek_m
+```
+
+Για το τελικό αποτέλεσμα ενώνουμε τους πίνακες και ταξινομούμε κατάλληλα:
+
+```{r echo=TRUE}
+greek <- left_join(greek_f, greek_m)
+arrange(greek, desc(rowSums(greek)))
+```
+
