@@ -1,0 +1,444 @@
+---
+title: "Exploratory Data Analysis & Visualization (EDAV) - HW4"
+author: "Antonios Kagias"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r Load libraries, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(tidyverse)
+library(plotly)
+```
+
+```{r Read csv file, include=FALSE}
+results <- read.csv(file = 'results.csv')
+```
+
+Check how many rows we have with "None" in Result:
+```{r echo=TRUE}
+none_results <- results %>%
+  filter(Result == "None" & Name != "null") %>%
+  select(Event, Year, Name, Medal) %>%
+  arrange(Year, Event)
+none_results
+```
+
+After looking on the Internet, we fix some of the results:
+```{r Fill some results, echo=TRUE}
+results$Result[results$Name == "George ORTON" & results$Event == "400M Hurdles Men" & results$Year == 1900] <- "58.8"
+results$Result[results$Name == "Ernst SCHULTZ" & results$Event == "400M Men" & results$Year == 1900] <- "51.5"
+results$Result[results$Name == "David HALL" & results$Event == "800M Men" & results$Year == 1900] <- "2:03.8"
+results$Result[results$Name == "George POAGE" & results$Event == "400M Hurdles Men" & results$Year == 1904] <- "56.8"
+results$Result[results$Name == "John RECTOR" & results$Event == "100M Men" & results$Year == 1908] <- "10.9"
+results$Result[results$Name == "Robert KERR" & results$Event == "100M Men" & results$Year == 1908] <- "11.0"
+results$Result[results$Name == "Arthur SHAW" & results$Event == "110M Hurdles Men" & results$Year == 1908] <- "15.8"
+results$Result[results$Name == "Robert CLOUGHEN" & results$Event == "200M Men" & results$Year == 1908] <- "22.6"
+results$Result[results$Name == "Nate CARTMELL" & results$Event == "200M Men" & results$Year == 1908] <- "22.7"
+results$Result[results$Name == "Harry HILLMAN" & results$Event == "400M Hurdles Men" & results$Year == 1908] <- "55.3"
+results$Result[results$Name == "Leonard Francis TREMEER" & results$Event == "400M Hurdles Men" & results$Year == 1908] <- "57.0"
+results$Result[results$Name == "Patrick FLYNN" & results$Event == "3000M Steeplechase Men" & results$Year == 1920] <- "10:21.1"
+results$Result[results$Name == "Ernesto AMBROSINI" & results$Event == "3000M Steeplechase Men" & results$Year == 1920] <- "10:32.0"
+results$Result[results$Name == "Fanny ROSENFELD" & results$Event == "100M Women" & results$Year == 1928] <- "12.3"
+results$Result[results$Name == "Ethel SMITH" & results$Event == "100M Women" & results$Year == 1928] <- "12.3"
+results$Result[results$Name == "Kinue HITOMI" & results$Event == "800M Women" & results$Year == 1928] <- "2:17.6"
+results$Result[results$Name == "Inga GENTZEL" & results$Event == "800M Women" & results$Year == 1928] <- "2:17.8"
+results$Result[results$Name == "Philip EDWARDS" & results$Event == "1500M Men" & results$Year == 1932] <- "3:52.8"
+results$Result[results$Name == "Philip EDWARDS" & results$Event == "800M Men" & results$Year == 1932] <- "1:51.5"
+results$Result[results$Name == "Ruth BEITIA" & results$Event == "High Jump Women" & results$Year == 2016] <- 1.97
+results$Result[results$Name == "Mirela DEMIREVA" & results$Event == "High Jump Women" & results$Year == 2016] <- 1.97
+results$Result[results$Name == "Blanka VLASIC" & results$Event == "High Jump Women" & results$Year == 2016] <- 1.97
+results$Result[results$Name == "Thomas ROHLER" & results$Event == "Javelin Throw Men" & results$Year == 2016] <- 90.3
+results$Result[results$Name == "Julius YEGO" & results$Event == "Javelin Throw Men" & results$Year == 2016] <- 88.24
+results$Result[results$Name == "Keshorn WALCOTT" & results$Event == "Javelin Throw Men" & results$Year == 2016] <- 85.38
+```
+
+Then, we check how many rows we have with "Null" in the Name and "None" in Result:
+```{r None results with null name, echo=TRUE}
+null_names <- results %>%
+  filter(Result == "None" & Name == "null") %>%
+  select(Event, Year, Name, Nationality, Medal, Result) %>%
+  arrange(Year, Event)
+null_names
+```
+
+Again, manually filling some results:
+```{r Fill results to null names, echo=TRUE}
+results$Result[results$Event == "4X400M Relay Men" & results$Year == 2016
+               & results$Medal == "G"] <- "2:57.30"
+results$Result[results$Event == "4X400M Relay Men" & results$Year == 2016
+               & results$Medal == "S"] <- "2:58.16"
+results$Result[results$Event == "4X400M Relay Men" & results$Year == 2016
+               & results$Medal == "B"] <- "2:58.49"
+results$Result[results$Event == "4X400M Relay Women" & results$Year == 2016
+               & results$Medal == "G"] <- "3:19.06"
+results$Result[results$Event == "4X400M Relay Women" & results$Year == 2016
+               & results$Medal == "S"] <- "3:20.34"
+results$Result[results$Event == "4X400M Relay Women" & results$Year == 2016
+               & results$Medal == "B"] <- "3:25.88"
+results$Result[results$Event == "4X100M Relay Men" & results$Year == 1928
+               & results$Medal == "S"] <- "41.200"
+results$Result[results$Event == "4X100M Relay Men" & results$Year == 1928
+               & results$Medal == "B"] <- "41.800"
+results$Result[results$Event == "4X100M Relay Women" & results$Year == 1928
+               & results$Medal == "S"] <- "48.800"
+results$Result[results$Event == "4X100M Relay Women" & results$Year == 1928
+               & results$Medal == "B"] <- "49.000"
+results$Result[results$Event == "4X400M Relay Men" & results$Year == 1928
+               & results$Medal == "S"] <- "3:14.80"
+results$Result[results$Event == "4X400M Relay Men" & results$Year == 1928
+               & results$Medal == "B"] <- "3:15.40"
+results$Result[results$Event == "4X400M Relay Men" & results$Year == 1908
+               & results$Medal == "S"] <- "3:32.40"
+results$Result[results$Event == "4X400M Relay Men" & results$Year == 1908
+               & results$Medal == "B"] <- "3:32.50"
+results$Result[results$Event == "4X100M Relay Men" & results$Year == 1912
+               & results$Medal == "G"] <- "42.4"
+results$Result[results$Event == "4X100M Relay Men" & results$Year == 1920
+               & results$Medal == "S"] <- "42.6"
+results$Result[results$Event == "4X100M Relay Men" & results$Year == 1912
+               & results$Medal == "S"] <- "42.6"
+results$Result[results$Event == "4X100M Relay Men" & results$Year == 1920
+               & results$Medal == "B"] <- "42.9"
+results$Result[results$Event == "400M Men" & results$Year == 1912
+               & results$Medal == "G"] <- "48.2"
+results$Result[results$Event == "400M Men" & results$Year == 1912
+               & results$Medal == "S"] <- "48.3"
+results$Result[results$Event == "400M Men" & results$Year == 1912
+               & results$Medal == "B"] <- "48.4"
+results$Result[results$Event == "400M Men" & results$Year == 1920
+               & results$Medal == "G"] <- "49.6"
+results$Result[results$Event == "400M Men" & results$Year == 1920
+               & results$Medal == "S"] <- "49.9"
+results$Result[results$Event == "400M Men" & results$Year == 1920
+               & results$Medal == "B"] <- "50.0"
+results$Result[results$Event == "400M Hurdles Men" & results$Year == 1920
+               & results$Medal == "G"] <- "54.0"
+```
+
+Now, we check again and we have 0 rows:
+```{r Now check none results with null name, echo=TRUE}
+null_names <- results %>%
+  filter(Result == "None" & Name == "null") %>%
+  select(Event, Year, Name, Nationality, Medal, Result) %>%
+  arrange(Year, Event)
+null_names
+```
+
+Then, we check how many rows remain with "NA" in Year or "None" in Result:
+```{r Drop rows we can not find data for + rows that are useless, echo=TRUE}
+na_year <- results %>%
+  filter(is.na(Year)) %>%
+  select(Event, Year, Name, Medal) %>%
+  arrange(Year, Event)
+na_year
+
+none_results <- results %>%
+  filter(Result == "None") %>%
+  select(Event, Year, Name, Medal) %>%
+  arrange(Year, Event)
+none_results
+```
+
+Only 16 rows out of 2406 = 0.66% of our data, we drop these rows:
+```{r Final table, echo=TRUE}
+final_results = subset(results, !is.na(results$Year) & results$Result != "None")
+final_results
+```
+
+Check validity of certain data that have fixed values:
+```{r Check validity of certain data that have fixed values, echo=TRUE}
+final_results %>%
+  distinct(Gender)
+final_results %>%
+  distinct(Medal)
+```
+
+We split the results table based on Event:
+```{r Split results based on Event, echo=TRUE}
+X<-split(final_results, final_results$Event)
+```
+
+We fix some formatting and convert to double certain Results.
+```{r Fix formatting in Result, echo=TRUE, warning=FALSE}
+X$`20Km Race Walk Men`$Result <- gsub("h", ":", X$`20Km Race Walk Men`$Result)
+X$`20Km Race Walk Men`$Result <- gsub("^0+", "", X$`20Km Race Walk Men`$Result)
+X$`20Km Race Walk Women`$Result <- gsub("h", ":", X$`20Km Race Walk Women`$Result)
+X$`20Km Race Walk Women`$Result <- gsub("^0+", "", X$`20Km Race Walk Women`$Result)
+X$`4X100M Relay Men`$Result <- gsub("^0:+", "", X$`4X100M Relay Men`$Result)
+X$`4X400M Relay Men`$Result <- gsub("^0+", "", X$`4X400M Relay Men`$Result)
+X$`4X400M Relay Men`$Result <- gsub(" est", "", X$`4X400M Relay Men`$Result)
+X$`4X400M Relay Women`$Result <- gsub("^0+", "", X$`4X400M Relay Women`$Result)
+X$`50Km Race Walk Men`$Result <- gsub("h", ":", X$`50Km Race Walk Men`$Result)
+X$`50Km Race Walk Men`$Result <- gsub("^0+", "", X$`50Km Race Walk Men`$Result)
+X$`800M Men`$Result <- gsub("^0+", "", X$`800M Men`$Result)
+X$`800M Women`$Result <- gsub("^0+", "", X$`800M Women`$Result)
+X$`Decathlon Men`$Result <- gsub("+P.$", "", X$`Decathlon Men`$Result)
+X$`Heptathlon Women`$Result <- gsub("+P.$", "", X$`Heptathlon Women`$Result)
+X$`Marathon Men`$Result <- gsub("h", ":", X$`Marathon Men`$Result)
+X$`Marathon Men`$Result <- gsub("-", ":", X$`Marathon Men`$Result)
+X$`Marathon Men`$Result <- gsub("^0+", "", X$`Marathon Men`$Result)
+X$`Marathon Women`$Result <- gsub("h", ":", X$`Marathon Women`$Result)
+X$`Marathon Women`$Result <- gsub("-", ":", X$`Marathon Women`$Result)
+X$`Marathon Women`$Result <- gsub("^0+", "", X$`Marathon Women`$Result)
+```
+
+```{r Convert to double certain Results, echo=TRUE, warning=FALSE}
+X$`Decathlon Men`$Result <- as.double(X$`Decathlon Men`$Result)
+X$`Discus Throw Men`$Result <- as.double(X$`Discus Throw Men`$Result)
+X$`Discus Throw Women`$Result <- as.double(X$`Discus Throw Women`$Result)
+X$`Hammer Throw Men`$Result <- as.double(X$`Hammer Throw Men`$Result)
+X$`Hammer Throw Women`$Result <- as.double(X$`Hammer Throw Women`$Result)
+X$`Heptathlon Women`$Result <- as.double(X$`Heptathlon Women`$Result)
+X$`High Jump Men`$Result <- as.double(X$`High Jump Men`$Result)
+X$`High Jump Women`$Result <- as.double(X$`High Jump Women`$Result)
+X$`Javelin Throw Men`$Result <- as.double(X$`Javelin Throw Men`$Result)
+X$`Javelin Throw Women`$Result <- as.double(X$`Javelin Throw Women`$Result)
+X$`Long Jump Men`$Result <- as.double(X$`Long Jump Men`$Result)
+X$`Long Jump Women`$Result <- as.double(X$`Long Jump Women`$Result)
+X$`Pole Vault Men`$Result <- as.double(X$`Pole Vault Men`$Result)
+X$`Pole Vault Women`$Result <- as.double(X$`Pole Vault Women`$Result)
+X$`Shot Put Men`$Result <- as.double(X$`Shot Put Men`$Result)
+X$`Shot Put Women`$Result <- as.double(X$`Shot Put Women`$Result)
+X$`Triple Jump Men`$Result <- as.double(X$`Triple Jump Men`$Result)
+X$`Triple Jump Women`$Result <- as.double(X$`Triple Jump Women`$Result)
+```
+
+The following plot shows the total medals each country won. We can see that the USA is clearly very far ahead, followed by Russia, Great Britain and Germany:
+```{r Plot: All-time medals by country, echo=TRUE, message=FALSE, warning=FALSE}
+medal_counts <- final_results %>%
+  group_by(Nationality, Medal) %>%
+  summarize(Count=length(Medal))
+
+medal_levels <- medal_counts %>%
+  group_by(Nationality) %>%
+  summarize(Total=sum(Count)) %>%
+  arrange(Total) %>%
+  select(Nationality)
+
+medal_counts$Nationality <- factor(medal_counts$Nationality, levels=medal_levels$Nationality)
+medal_counts$Medal <- factor(medal_counts$Medal, levels=c("B", "S", "G"))
+
+all_time_plot <- medal_counts %>%
+  ggplot(aes(x=Nationality, y=Count, fill=Medal)) +
+  geom_col(color="white") +
+  coord_flip() +
+  scale_fill_manual(values=c("#967444","#C0C0C0","#FFD700")) +
+  theme(axis.text.x = element_text(vjust = 1, hjust = 1)) +
+  labs(title = "All-time medals by country",
+       x = "Country",
+       y = "Total medals")
+ggplotly(all_time_plot, height = 2000, width = 1000)
+```
+
+Next, since USA is further ahead, we make a comparison between Russia, Germany and Great Britain. For this reason, we take into account that Russia and Germany have participated throughout the years with different names, such as "Soviet Union -> URS":
+```{r Plot for comparison between Russia-Germany-Great Britain, message=FALSE, warning=FALSE, echo=TRUE}
+medals_by_year <- final_results %>%
+  select(Nationality, Year, Medal) %>%
+  group_by(Nationality, Year) %>%
+  summarize(Total=length(Medal))
+
+ger_rus_gbr <- medals_by_year %>%
+  filter(Nationality=="GER" | Nationality=="EUA" | Nationality=="FRG" | Nationality=="GDR"
+         | Nationality=="RUS" | Nationality=="URS" | Nationality=="EUN"
+         | Nationality=="GBR") %>%
+  mutate(Nationality = str_replace(Nationality, "EUA", "GER")) %>%
+  mutate(Nationality = str_replace(Nationality, "FRG", "GER")) %>%
+  mutate(Nationality = str_replace(Nationality, "GDR", "GER")) %>%
+  mutate(Nationality = str_replace(Nationality, "URS", "RUS")) %>%
+  mutate(Nationality = str_replace(Nationality, "EUN", "RUS"))
+ger_rus_gbr
+
+plot_medals_by_year <- ger_rus_gbr %>%
+  ggplot(aes(x = Year, y = Total, color = fct_reorder2(Nationality, Year, Total)))+
+  geom_line() +
+  geom_point() +
+  labs(title = "Russia, Germany and Great Britain",
+       x = "Year",
+       y = "Total medals") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_medals_by_year) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+Next, there are some plots that depict the change for the gold medal place in some sports:
+```{r Plot for change in gold medal place in 100M Men, echo=TRUE, message=FALSE, warning=FALSE}
+op <- options(digits.secs = 2)
+X$`100M Men`$Result <- substr(strptime(X$`100M Men`$Result, format = "%OS"), 18, 22)
+
+evolution_100m_men <- X$`100M Men` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_100m_men <- evolution_100m_men %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#FF6347") +
+  geom_point(color = "#B22222") +
+  labs(title = "Which time awards a gold medal for '100M Men'",
+       x = "Year",
+       y = "Time (seconds)") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_100m_men) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+```{r Plot for change in gold medal place in 100M Women, echo=TRUE, message=FALSE, warning=FALSE}
+X$`100M Women`$Result <- substr(strptime(X$`100M Women`$Result, format = "%OS"), 18, 22)
+
+evolution_100m_women <- X$`100M Women` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_100m_women <- evolution_100m_women %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#008080") +
+  geom_point(color = "#000080") +
+  labs(title = "Which time awards a gold medal for '100M Women'",
+       x = "Year",
+       y = "Time (seconds)") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_100m_women) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+```{r Plot for change in gold medal place in 400M Men, echo=TRUE, message=FALSE, warning=FALSE}
+X$`400M Men`$Result <- substr(strptime(X$`400M Men`$Result, format = "%OS"), 18, 22)
+
+evolution_400m_men <- X$`400M Men` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_400m_men <- evolution_400m_men %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#FF6347") +
+  geom_point(color = "#B22222") +
+  labs(title = "Which time awards a gold medal for '400M Men'",
+       x = "Year",
+       y = "Time (seconds)") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_400m_men) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+```{r Plot for change in gold medal place in 400M Women, echo=TRUE, message=FALSE, warning=FALSE}
+X$`400M Women`$Result <- substr(strptime(X$`400M Women`$Result, format = "%OS"), 18, 22)
+
+evolution_400m_women <- X$`400M Women` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_400m_women <- evolution_400m_women %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#008080") +
+  geom_point(color = "#000080") +
+  labs(title = "Which time awards a gold medal for '400M Women'",
+       x = "Year",
+       y = "Time (seconds)") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_400m_women) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+```{r Plot for change in gold medal place in Javelin Throw Men, echo=TRUE, message=FALSE, warning=FALSE}
+evolution_javelin_throw_men <- X$`Javelin Throw Men` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_javelin_throw_men <- evolution_javelin_throw_men %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#FF6347") +
+  geom_point(color = "#B22222") +
+  labs(title = "How far do you have to throw the javelin for a gold metal in men",
+       x = "Year",
+       y = "Metres") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_javelin_throw_men) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+```{r Plot for change in gold medal place in Javelin Throw Women, echo=TRUE, message=FALSE, warning=FALSE}
+evolution_javelin_throw_women <- X$`Javelin Throw Women` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_javelin_throw_women <- evolution_javelin_throw_women %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#008080") +
+  geom_point(color = "#000080") +
+  labs(title = "How far do you have to throw the javelin for a gold metal in women",
+       x = "Year",
+       y = "Metres") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_javelin_throw_women) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+```{r Plot for change in gold medal place in Pole Vault Men, echo=TRUE, message=FALSE, warning=FALSE}
+evolution_pole_vault_men <- X$`Pole Vault Men` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_pole_vault_men <- evolution_pole_vault_men %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#FF6347") +
+  geom_point(color = "#B22222") +
+  labs(title = "How high do you have to be in pole vault for a gold metal in men",
+       x = "Year",
+       y = "Metres") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_pole_vault_men) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+```{r Plot for change in gold medal place in Pole Vault Women, echo=TRUE, message=FALSE, warning=FALSE}
+evolution_pole_vault_women <- X$`Pole Vault Women` %>%
+  filter(Medal == "G") %>%
+  select(Year, Result) %>%
+  arrange(Year)
+
+plot_evolution_pole_vault_women <- evolution_pole_vault_women %>%
+  ggplot(aes(x = Year, y = as.numeric(Result)))+
+  geom_line(color = "#008080") +
+  geom_point(color = "#000080") +
+  labs(title = "How high do you have to be in pole vault for a gold metal in women",
+       x = "Year",
+       y = "Metres") +
+  theme(legend.position="bottom") +
+  theme(legend.title=element_blank())
+
+ggplotly(plot_evolution_pole_vault_women) %>%
+  layout(height = 500, width = 1000, legend = list(orientation = "h", x = 0.4, y = -0.2, title = list(text = "")))
+```
+
+
+
+We can clearly notice that the gold medal times in 100M and 400M have been reducing as the years go by, with some minor, irrelevant increases. Similarly, the distance in Javelin Throw and the height in Pole Vault required for the 1st place have been getting greater and larger respectively, although some Olympic records still stand from years ago. For example, the Olympic record in Javelin Throw for men is 94.58m since 1976.
+
