@@ -1,0 +1,94 @@
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(tidyverse)
+
+# 1. queen.csv
+
+songs <- read.csv(file = 'queen.csv')
+
+#(α) Δώστε ένα bar plot όπου να φαίνεται το πλήθος των tracks ανά album.
+songs %>%
+  ggplot(aes(x = album_name)) +
+  geom_bar(fill="#99CCFF") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(title = "Bar plot of number of tracks by album",
+       x = "Album name",
+       y = "Number of tracks")
+
+
+#(β) Δώστε ένα histogram (με 15 bins) που να δείχνει την κατανομή των τιμών του tempo
+#των tracks. Χρησιμοποιήστε το aesthetic fill για να δείξετε την κατανομή του mode
+#των tracks του κάθε bin.
+songs %>%
+  ggplot(aes(tempo, fill = mode)) +
+  geom_histogram(bins = 15, color = "white") +
+  labs(title = "Distribution of tracks' tempo and mode",
+       x = "Tempo",
+       y = "Number of tracks")
+
+
+#(γ) Δώστε τα boxplots του tempo ανά album.
+songs %>%
+  ggplot(aes(x = reorder(album_name, -tempo), y = tempo)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(title = "Boxplot of tempo by album",
+       x = "Album name",
+       y = "Tempo")
+
+
+#(δ) Δώστε ένα faceted scatterplot ως προς το danceability και το energy για κάθε album.
+#Χρησιμοποιήστε το aesthetic size για το tempo.
+songs %>%
+  ggplot(aes(x = danceability, y = energy)) +
+  geom_point(aes(size = tempo), alpha = 0.5, position = "jitter", color = "#FF8C00") +
+  facet_wrap(~album_name) +
+  labs(title = "Danceability and energy for every track by album",
+       x = "Danceability",
+       y = "Energy")
+
+
+#(ε) Δώστε άλλα δυο ενδιαφέροντα plots της δικής επιλογής.
+
+#Διάρκεια των tracks ανά album
+minutes = songs$duration_ms / 60000
+songs %>%
+  ggplot(aes(x = minutes, y = reorder(album_name, -minutes), fill = album_name)) +
+  geom_density_ridges(scale = 2, alpha = 0.5) +
+  theme_ridges() +
+  labs(title = "Duration of songs by album (in mins)",
+       x = "Minutes",
+       y = "Album name") +
+  theme(legend.position = "none")
+
+
+#Μέση δημοτικότητα των tracks ανά album
+mean_popularity <- group_by(songs, album_name) %>% summarize(m = mean(track_popularity))
+mean_popularity %>%
+  ggplot(aes(x = m, y = reorder(album_name, m))) +
+  geom_point(color = "#808000", size = 3) +
+  labs(title = "Average track popularity by album",
+       x = "Average popularity",
+       y = "Album name")
+
+# 2. mcdonalds.csv
+
+#Το dataset mcdonalds.csv περιέχει για διάφορες χώρες και χρονιές την τιμή του BIG MAC
+#σε τοπικό νόμισμα. Με τη βοήθεια των επιπλέον στηλών (dollar_ex είναι η ισοτιμία του
+#τοπικού νομίσματος με το δολάριο) υπολογίστε τις τιμές του BIG MAC σε US dollars και
+#δώστε ένα scatterplot ως προς το GDP των χωρών και την τιμή του BIG MAC σε US dollars.
+
+borgirs <- read.csv(file = 'mcdonalds.csv')
+
+price_in_USD = borgirs$local_price / borgirs$dollar_ex
+borgirs %>%
+  ggplot(aes(x = price_in_USD, y = GDP_dollar)) +
+  geom_point(alpha = 0.5, position = "jitter", color = "#008B8B") +
+  labs(title = "Scatterplot of Big Mac price in USD and countries' GDP",
+       x = "Price in USD",
+       y = "GDP in USD")
+
+
+
+
