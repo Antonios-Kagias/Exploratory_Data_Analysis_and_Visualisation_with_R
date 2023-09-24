@@ -1,4 +1,4 @@
-# Exploratory_Data_Analysis_and_Visualisation_with_R
+# Exploratory Data Analysis and Visualisation with R
 
 The projects in this repository were created while working on the course Exploratory Data Analysis and Visualisation for my postgraduate studies. They include the following:
 
